@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Book {
+  id              String   @id @default(cuid())
+  title           String
+  author          String
+  isbn            String   @unique
+  category        String
+  quantity        Int      @default(1)
+  availableCopies Int      @default(1)
+  rackLocation    String?
+  publishedYear   Int?
+  description     String?
+  coverImage      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  issues          Issue[]
+  activityLogs    ActivityLog[]
+  
+  @@index([title])
+  @@index([author])
+  @@index([category])
+}
+
+model Issue {
+  id           String   @id @default(cuid())
+  bookId       String
+  book         Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  borrowerName String
+  borrowerId   String?  // Optional borrower ID
+  issueDate    DateTime @default(now())
+  dueDate      DateTime
+  returnDate   DateTime?
+  status       String   @default("issued") // issued, returned, overdue
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([borrowerName])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  action      String   // book_added, book_updated, book_deleted, book_issued, book_returned
+  bookId      String?
+  book        Book?    @relation(fields: [bookId], references: [id], onDelete: SetNull)
+  description String
+  metadata    String?  // JSON string for additional data
+  createdAt   DateTime @default(now())
+  
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Settings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
